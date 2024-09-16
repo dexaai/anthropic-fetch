@@ -48,7 +48,7 @@ class AnthropicStreamParser<Raw, Nice> {
         console.error(`Error processing ${eventType}:`, error);
       }
       if (eventType === 'message_stop') {
-        // this.onend?.();
+        this.onend?.();
       }
     });
   }
@@ -65,12 +65,24 @@ export class StreamCompletionChunker<Raw, Nice>
   readable: ReadableStream<Nice>;
 
   constructor(responseFactory: ResponseFactory<Raw, Nice>) {
+    let isClosed = false;
     const parser = new AnthropicStreamParser(responseFactory);
     this.writable = new WritableStream(parser);
     this.readable = new ReadableStream({
       start(controller) {
-        parser.onchunk = (chunk: Nice) => controller.enqueue(chunk);
-        parser.onend = () => controller.close();
+        parser.onchunk = (chunk: Nice) => {
+          if (isClosed) {
+            return;
+          }
+          controller.enqueue(chunk);
+        };
+        parser.onend = () => {
+          if (isClosed) {
+            return;
+          }
+          isClosed = true;
+          controller.close();
+        }
       },
     });
   }

@@ -135,11 +135,10 @@ export class AnthropicClient implements AIFetchClient, AIChatClient {
         });
       } else {
         // We skip any other text blocks
-        // since we have no way to reconstruct the list, once we 
+        // since we have no way to reconstruct the list, once we
         // return the ChatResponse object.
       }
     });
-
 
     return {
       index: 0,
@@ -315,14 +314,10 @@ export class AnthropicClient implements AIFetchClient, AIChatClient {
       };
     const created = Date.now() / 1000;
 
-    console.log('anthropic params', JSON.stringify(anthropicParams, null, 2));
-
     const response = await this.getApi(opts)
       .post('messages', { json: anthropicParams })
       .json();
     const anthropicResponse = response as Anthropic.Messages.Message;
-
-    // console.log(anthropicResponse)
 
     // Convert to the ChatReponse format
     const choice = this.getChatCompletionChoice(anthropicResponse);
@@ -352,26 +347,23 @@ export class AnthropicClient implements AIFetchClient, AIChatClient {
     const toolChoice = this.convertToolChoiceToAnthropicToolChoice(
       params.tool_choice
     );
-    const anthropicParams: Anthropic.Messages.MessageCreateParamsStreaming =
-      {
-        model: params.model,
-        system: systemMessage,
-        messages,
-        max_tokens: params.max_tokens || this.defaultMaxTokens,
-        tools,
-        tool_choice: toolChoice,
-        top_k: params.n || undefined,
-        top_p: params.top_p || undefined,
-        temperature: params.temperature || undefined,
-        stop_sequences:
-          typeof params.stop === 'string'
-            ? [params.stop]
-            : params.stop || undefined,
-        stream: true,
-      };
+    const anthropicParams: Anthropic.Messages.MessageCreateParamsStreaming = {
+      model: params.model,
+      system: systemMessage,
+      messages,
+      max_tokens: params.max_tokens || this.defaultMaxTokens,
+      tools,
+      tool_choice: toolChoice,
+      top_k: params.n || undefined,
+      top_p: params.top_p || undefined,
+      temperature: params.temperature || undefined,
+      stop_sequences:
+        typeof params.stop === 'string'
+          ? [params.stop]
+          : params.stop || undefined,
+      stream: true,
+    };
     const created = Date.now() / 1000;
-
-    console.log('anthropic params', JSON.stringify(anthropicParams, null, 2));
 
     const response = await this.getApi(opts).post('messages', {
       json: anthropicParams,
@@ -379,57 +371,10 @@ export class AnthropicClient implements AIFetchClient, AIChatClient {
     });
     const stream = response.body as ReadableStream;
     return stream.pipeThrough(
-      // new StreamCompletionChunker(
-      //   (response: Anthropic.Messages.RawMessageStreamEvent) => {
-
-          
-
-      //     // Todo: map these data structures to the ChatStreamChunk type
-      //     // switch (response.type) {
-      //     //   case 'message_start':
-      //     //     response.type
-      //     //     response.message
-      //     //     break
-      //     //   case 'message_delta':
-      //     //     response.usage
-      //     //     response.type
-      //     //     response.delta
-      //     //     break
-      //     //   case 'message_stop':
-      //     //     // nothing to do here
-      //     //      break
-      //     //   case 'content_block_start':
-      //     //      response.index
-      //     //      response.type
-      //     //      response.content_block
-      //     //     break
-      //     //   case 'content_block_delta':
-      //     //     response.index
-      //     //     response.type
-      //     //     response.delta
-      //     //      switch(response.delta.type) {
-      //     //       case 'text_delta':
-      //     //         response.delta.text
-      //     //         break
-      //     //       case 'input_json_delta':
-      //     //         response.delta.partial_json
-      //     //         break
-      //     //      }
-      //     //      break
-      //     //   case 'content_block_stop':
-      //     //      response.index
-      //     //      response.type
-      //     //      break
-      //     //   default:
-      //     // }
-              
-
-      //     return response as unknown as ChatStreamChunk;
-      //   }
-      // )
-
       new StreamCompletionChunker(
-        (response: Anthropic.Messages.RawMessageStreamEvent): ChatStreamChunk => {
+        (
+          response: Anthropic.Messages.RawMessageStreamEvent
+        ): ChatStreamChunk => {
           let chunk: Partial<ChatStreamChunk> = {
             id: '',
             object: 'chat.completion.chunk',
@@ -437,119 +382,143 @@ export class AnthropicClient implements AIFetchClient, AIChatClient {
             model: '', // We don't have this information in the response
             choices: [],
           };
-      
+
           switch (response.type) {
-            //todo: might need to handle this in the completion chunker,
-            // if this doesn't match the caller's expected data
-            // also, some of these values, might be useful
-            // for future chunks to have as well
-            // so we probably need a stateful implementation in the completion chunker
-            // where it builds up the deltas using values from start and end etc.
-            // same with content block start and end.
             case 'message_start':
               chunk.id = response.message.id;
-              chunk.choices = [{
-                index: 0,
-                delta: { 
-                  role: 'assistant' ,
-               },
-                finish_reason: response.message.stop_reason ? this.mapStopReason(response.message.stop_reason) : null,
-              }];
+              chunk.choices = [
+                {
+                  index: 0,
+                  delta: {
+                    role: 'assistant',
+                    content: '',
+                  },
+                  finish_reason: response.message.stop_reason
+                    ? this.mapStopReason(response.message.stop_reason)
+                    : null,
+                },
+              ];
               chunk.model = response.message.model;
 
               break;
-      
+
             case 'message_delta':
               if (response.delta.stop_reason) {
-                chunk.choices = [{
-                  index: 0,
-                  delta: {},
-                  finish_reason: this.mapStopReason(response.delta.stop_reason),
-                }];
+                chunk.choices = [
+                  {
+                    index: 0, // message delta is later on,
+                    delta: {
+                      role: 'assistant',
+                      content: '',
+                    },
+                    finish_reason: this.mapStopReason(
+                      response.delta.stop_reason
+                    ),
+                  },
+                ];
               }
               if (response.usage) {
                 chunk.usage = {
-                  prompt_tokens: 0, // not provided 
+                  prompt_tokens: 0, // not provided, can be calculated later with a tokenizer
                   completion_tokens: response.usage.output_tokens,
                   total_tokens: response.usage.output_tokens, // Approximation
                 };
               }
               break;
-      
+
             case 'content_block_start':
               if (response.content_block.type === 'text') {
-                chunk.choices = [{
-                  index: 0,
-                  delta: { content: response.content_block.text },
-                  finish_reason: null,
-                }];
-              } else if (response.content_block.type === 'tool_use') {
-                chunk.choices = [{
-                  index: 0,
-                  delta: {
-                    tool_calls: [{
-                      index: response.index,
-                      id: response.content_block.id,
-                      type: 'function',
-                      function: {
-                        name: response.content_block.name,
-                        arguments: JSON.stringify(response.content_block.input),
-                      },
-                    }],
+                chunk.choices = [
+                  {
+                    index: response.index,
+                    delta: { role: 'assistant', content: response.content_block.text },
+                    finish_reason: null,
                   },
-                  finish_reason: null,
-                }];
+                ];
+              } else if (response.content_block.type === 'tool_use') {
+                chunk.choices = [
+                  {
+                    index: response.index,
+                    delta: {
+                      role: 'assistant',
+                      content: '',
+                      tool_calls: [
+                        {
+                          index: response.index,
+                          id: response.content_block.id,
+                          type: 'function',
+                          function: {
+                            name: response.content_block.name,
+                            arguments: '',
+                          },
+                        },
+                      ],
+                    },
+                    finish_reason: null,
+                  },
+                ];
               }
               break;
-      
+
             case 'content_block_delta':
               if (response.delta.type === 'text_delta') {
-                chunk.choices = [{
-                  index: 0,
-                  delta: { content: response.delta.text },
-                  finish_reason: null,
-                }];
-              } else if (response.delta.type === 'input_json_delta') {
-                chunk.choices = [{
-                  index: 0,
-                  delta: {
-                    tool_calls: [{
-                      index: response.index,
-                      function: {
-                        arguments: response.delta.partial_json,
-                      },
-                    }],
+                chunk.choices = [
+                  {
+                    index: response.index,
+                    delta: { role: 'assistant', content: response.delta.text },
+                    finish_reason: null,
                   },
-                  finish_reason: null,
-                }];
+                ];
+              } else if (response.delta.type === 'input_json_delta') {
+                chunk.choices = [
+                  {
+                    index: response.index,
+                    delta: {
+                      role: 'assistant',
+                      content: '',
+                      tool_calls: [
+                        {
+                          index: response.index,
+                          function: {
+                            arguments: response.delta.partial_json,
+                          },
+                        },
+                      ],
+                    },
+                    finish_reason: null,
+                  },
+                ];
               }
               break;
-      
-            // For other event types, we return an empty chunk
+
+            case 'content_block_stop':
             default:
-              chunk.choices = [{ index: 0, delta: {}, finish_reason: null }];
+              chunk.choices = [{ index: 0, delta: {
+                role: 'assistant',
+                content: '',
+              }, finish_reason: null }];
           }
-      
+
           return chunk as ChatStreamChunk;
         }
       )
-      
-    
     );
   }
-    // Helper function to map Anthropic stop reasons to OpenAI finish reasons
-    mapStopReason(stopReason: string): ChatStreamChunk['choices'][number]['finish_reason'] {
-      switch (stopReason) {
-        case 'end_turn':
-          return 'stop';
-        case 'max_tokens':
-          return 'length';
-        case 'stop_sequence':
-          return 'stop';
-        case 'tool_use':
-          return 'tool_calls';
-        default:
-          return null;
-      }
+  // Helper function to map Anthropic stop reasons to OpenAI finish reasons
+  mapStopReason(
+    stopReason: string
+  ): ChatStreamChunk['choices'][number]['finish_reason'] {
+    switch (stopReason) {
+      case 'end_turn':
+        return 'stop';
+      case 'max_tokens':
+        return 'length';
+      case 'stop_sequence':
+        return 'stop';
+      case 'tool_use':
+        return 'tool_calls';
+      default:
+        return null;
     }
+  }
 }
