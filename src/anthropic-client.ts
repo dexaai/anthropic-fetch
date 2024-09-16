@@ -63,7 +63,7 @@ export class AnthropicClient implements AIFetchClient, AIChatClient {
 
   constructor(opts: ConfigOpts = {}) {
     const process = globalThis.process || { env: {} };
-    const apiKey = opts.apiKey || process.env.OPENAI_API_KEY;
+    const apiKey = opts.apiKey || process.env.ANTHROPIC_API_KEY;
     const anthropicVersion = opts.anthropicVersion || '2023-06-01';
     const prefixUrl =
       opts.baseUrl ||
