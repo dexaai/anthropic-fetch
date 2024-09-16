@@ -41,17 +41,14 @@ class AnthropicStreamParser<Raw, Nice> {
     parts.forEach((part) => {
       const lines = part.split('\n');
       const eventType = lines[0]?.substring(7); // Remove "event: "
-      const data = JSON.parse(lines[1]?.substring(6) || '{}'); // Remove "data: " and parse JSON
-
-      if (eventType === 'content_block_delta' && data.delta.type === 'text_delta') {
-        try {
-          const niceChunk = this.responseFactory(data.delta as Raw);
-          this.onchunk?.(niceChunk);
-        } catch (error) {
-          console.error('Error processing chunk:', error);
-        }
-      } else if (eventType === 'message_stop') {
-        this.onend?.();
+      try {
+        const data = JSON.parse(lines[1]?.substring(6) || '{}'); // Remove "data: " and parse JSON
+        this.onchunk?.(this.responseFactory(data));
+      } catch (error) {
+        console.error(`Error processing ${eventType}:`, error);
+      }
+      if (eventType === 'message_stop') {
+        // this.onend?.();
       }
     });
   }
