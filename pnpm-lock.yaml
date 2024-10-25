@@ -8,7 +8,7 @@ importers:
 
   .:
     dependencies:
-      '@dexaai/ai-fetch':
+      ai-fetch:
         specifier: file:../ai-fetch
         version: file:../ai-fetch
       ky:
@@ -63,10 +63,6 @@ packages:
   '@babel/runtime@7.25.0':
     resolution: {integrity: sha512-7dRy4DwXwtzBrPbZflqxnvfxLF8kdZXPkhymtDeFoFqE6ldzjQFgYTtYIFARcLEYDrqfBfYcZt1WqFxRoyC9Rw==}
     engines: {node: '>=6.9.0'}
-
-  '@dexaai/ai-fetch@file:../ai-fetch':
-    resolution: {directory: ../ai-fetch, type: directory}
-    engines: {node: '>=18'}
 
   '@dexaai/eslint-config@1.3.3':
     resolution: {integrity: sha512-3O9S/cE8yL8VXcq9V5uaWET+JGrJILlHOGI7Mo+7EaZaH9tQeQRQdqURTBTtunXLsR2FN1NhWnmiAP9n2bzHEw==}
@@ -251,6 +247,10 @@ packages:
   aggregate-error@4.0.1:
     resolution: {integrity: sha512-0poP0T7el6Vq3rstR8Mn4V/IQrpBLO6POkUSrN7RhyY+GF/InCFShQzsQ39T25gkHhLgSLByyAz+Kjb+c2L98w==}
     engines: {node: '>=12'}
+
+  ai-fetch@file:../ai-fetch:
+    resolution: {directory: ../ai-fetch, type: directory}
+    engines: {node: '>=18'}
 
   ajv@6.12.6:
     resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
@@ -2314,10 +2314,6 @@ snapshots:
     dependencies:
       regenerator-runtime: 0.14.1
 
-  '@dexaai/ai-fetch@file:../ai-fetch':
-    dependencies:
-      ky: 1.5.0
-
   '@dexaai/eslint-config@1.3.3(eslint@8.57.0)(typescript@5.5.4)':
     dependencies:
       '@rushstack/eslint-patch': 1.10.4
@@ -2539,6 +2535,10 @@ snapshots:
     dependencies:
       clean-stack: 4.2.0
       indent-string: 5.0.0
+
+  ai-fetch@file:../ai-fetch:
+    dependencies:
+      ky: 1.5.0
 
   ajv@6.12.6:
     dependencies:

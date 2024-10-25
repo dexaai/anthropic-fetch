@@ -8,7 +8,7 @@ import {
   type ChatStreamParams,
   type ChatStreamResponse,
   createApiInstance,
-} from '@dexaai/ai-fetch';
+} from 'ai-fetch';
 import { type KyInstance, type Options as KyOptions } from 'ky';
 
 import { type Anthropic } from '../anthropic-types/index.js';

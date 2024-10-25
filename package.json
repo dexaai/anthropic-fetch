@@ -47,7 +47,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@dexaai/ai-fetch": "file:../ai-fetch",
+    "ai-fetch": "file:../ai-fetch",
     "ky": "^1.4.0"
   },
   "devDependencies": {

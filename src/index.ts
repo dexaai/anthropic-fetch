@@ -25,4 +25,4 @@ export type {
   PermissionDeniedError,
   RateLimitError,
   UnprocessableEntityError,
-} from '@dexaai/ai-fetch';
+} from 'ai-fetch';
